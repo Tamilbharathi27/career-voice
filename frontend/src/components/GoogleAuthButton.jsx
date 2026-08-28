@@ -16,36 +16,10 @@ export const GoogleAuthButton = ({ label = "Continue with Google", role = "stude
   const { loginWithGoogle } = useAuth();
 
   const handleGoogleSignIn = async () => {
-    setLoading(true);
     if (onError) onError(null);
-
-    try {
-      localStorage.setItem('careervoice_oauth_role', role);
-
-      // Attempt Supabase Native Google OAuth
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            prompt: 'select_account consent',
-            access_type: 'offline',
-          },
-        },
-      });
-
-      if (error) {
-        console.warn('Supabase OAuth Error (Provider might not be configured in Supabase):', error.message);
-        // Fallback to quick Google Account selector modal so user is never blocked
-        setShowModal(true);
-      }
-    } catch (err) {
-      console.warn('OAuth trigger note:', err);
-      setShowModal(true);
-    } finally {
-      setLoading(false);
-    }
+    // Directly open the mock Google login modal since Google OAuth credentials
+    // are not configured in the Supabase Dashboard.
+    setShowModal(true);
   };
 
   const handleModalGoogleSubmit = async (e) => {
