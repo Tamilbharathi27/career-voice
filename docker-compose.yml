@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: careervoice_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: careervoice_backend
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://postgres:Pavi%402107%402010@db.nmxhyfyuzvmatpdszxee.supabase.co:5432/postgres
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=secret_careervoice_jwt_key_change_in_production_2026
+      - ENVIRONMENT=development
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/storage:/app/storage
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: careervoice_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+
