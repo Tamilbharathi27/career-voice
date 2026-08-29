@@ -43,15 +43,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    // 1. Firebase Authentication (with graceful fallback for demo accounts)
-    let firebaseUser = null;
+    // 1. Firebase Authentication
     try {
       if (auth?.app?.options?.apiKey && !auth.app.options.apiKey.includes('DummyKey')) {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        firebaseUser = userCredential.user;
+        await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (fbErr) {
-      console.warn('Firebase Login notice:', fbErr.message);
+      console.error('Firebase Login Error:', fbErr);
+      if (fbErr.code === 'auth/invalid-credential' || fbErr.code === 'auth/wrong-password' || fbErr.code === 'auth/user-not-found') {
+        throw new Error('Invalid email or password. Please check your credentials.');
+      } else if (fbErr.code === 'auth/api-key-not-valid') {
+        throw new Error('Firebase API Key not configured in Vercel Environment Variables.');
+      } else if (fbErr.message) {
+        throw new Error(fbErr.message);
+      }
     }
 
     // 2. Synchronize / login with backend API
@@ -77,7 +82,16 @@ export const AuthProvider = ({ children }) => {
         }
       }
     } catch (fbErr) {
-      console.warn('Firebase Register notice:', fbErr.message);
+      console.error('Firebase Register Error:', fbErr);
+      if (fbErr.code === 'auth/email-already-in-use') {
+        throw new Error('An account with this email address already exists in Firebase.');
+      } else if (fbErr.code === 'auth/weak-password') {
+        throw new Error('Password should be at least 6 characters.');
+      } else if (fbErr.code === 'auth/api-key-not-valid') {
+        throw new Error('Firebase API Key not configured in Vercel Environment Variables.');
+      } else if (fbErr.message) {
+        throw new Error(fbErr.message);
+      }
     }
 
     // 2. Synchronize / register with backend API & Database

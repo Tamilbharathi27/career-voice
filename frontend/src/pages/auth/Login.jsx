@@ -29,7 +29,7 @@ export const Login = () => {
         navigate(from === '/login' ? '/dashboard' : from);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to sign in. Please check your credentials.');
+      setError(err.message || err.response?.data?.detail || 'Failed to sign in. Please check your credentials.');
     } finally {
       setLoading(false);
     }
