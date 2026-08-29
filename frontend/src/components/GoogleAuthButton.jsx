@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { supabase } from '../api/supabaseClient';
-import { Loader2, X, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Loader2, X, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import apiClient from '../api/client';
 
 export const GoogleAuthButton = ({ label = "Continue with Google", role = "student", onError }) => {
   const [loading, setLoading] = useState(false);
@@ -13,35 +11,24 @@ export const GoogleAuthButton = ({ label = "Continue with Google", role = "stude
   const [modalLoading, setModalLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loginWithFirebaseGoogle } = useAuth();
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     if (onError) onError(null);
 
     try {
-      localStorage.setItem('careervoice_oauth_role', role);
-
-      // Attempt Supabase Native Google OAuth
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            prompt: 'select_account consent',
-            access_type: 'offline',
-          },
-        },
-      });
-
-      if (error) {
-        console.warn('Supabase OAuth Error (Provider might not be configured in Supabase):', error.message);
-        // Fallback to quick Google Account selector modal so user is never blocked
-        setShowModal(true);
+      // 1. Trigger Firebase Google Popup Sign-in
+      const userData = await loginWithFirebaseGoogle(role);
+      
+      if (userData.role === 'recruiter') {
+        navigate('/recruiter/dashboard');
+      } else {
+        navigate('/dashboard');
       }
     } catch (err) {
-      console.warn('OAuth trigger note:', err);
+      console.warn('Firebase Google Auth Popup note (falling back to prompt):', err?.message);
+      // Fallback modal if popup is blocked or Firebase credentials are not yet configured in .env
       setShowModal(true);
     } finally {
       setLoading(false);
@@ -179,3 +166,4 @@ export const GoogleAuthButton = ({ label = "Continue with Google", role = "stude
     </>
   );
 };
+
